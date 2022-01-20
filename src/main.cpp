@@ -88,7 +88,7 @@ void loop() {
     initializeSdCardLoop();
   }
 
-  char dhtLogFileName[sizeof(logNamePrefix)+13];
+  char dhtLogFileName[sizeof(logNamePrefix)+17];
   formatTimeForFileName(dhtLogFileName);
 
   float rhum = dht.readHumidity();
@@ -182,7 +182,7 @@ void formatTimeForFileName(char* timeChar) {
   // This line updates the time variable (as it's not continuosly running)
   currentTime = buildTimeWithOffsets + (millis()/1000);
   tm* aux = gmtime(&currentTime);
-  sprintf(timeChar,"%s%d-%s%d-%s%d",
+  sprintf(timeChar,"%s%d-%s%d-%s%d.csv",
     logNamePrefix,
     aux->tm_year+1900, // Year
     aux->tm_mon+1 < 10 ? "0" : "", aux->tm_mon+1, // month with
@@ -191,7 +191,7 @@ void formatTimeForFileName(char* timeChar) {
 
   // Uncomment this if you want logs to rotate by hour
   /*
-  sprintf(timeChar,"%s%d-%s%d-%s%d_%s%d",
+  sprintf(timeChar,"%s%d-%s%d-%s%d_%s%d.csv",
     logNamePrefix,
     aux->tm_year+1900, // Year
     aux->tm_mon+1 < 10 ? "0" : "", aux->tm_mon+1, // month with
