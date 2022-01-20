@@ -45,16 +45,18 @@
 #define SD_MOUNT_RETRY_SECONDS 30
 #define DELAY_BETWEEN_READINGS_SECONDS 90
 
+#define LOCATION_UTC_OFFSET +1
+
 // We're using the compilation's build timestamp injected
 // as program's start time in order to simplify.
 // if you start the board later on, timestamp will be back in time
-int buildTimeWithOffsets = BUILD_TIME + 30 + 3600;
+int buildTimeWithOffsets = BUILD_TIME + 30 + (3600 * LOCATION_UTC_OFFSET);
 time_t currentTime = buildTimeWithOffsets;
 SdFat SD;
 File dhtCsvFile;
 DHT dht(DHTPIN, DHTTYPE);
 uint8_t errorCount = 0;
-const char* logFileNameStarter = "dhtLog_";
+const char* logNamePrefix = "dhtLog_";
 
 // Function definitions
 uint8_t logDhtReadings (char* filename, float temp, float hum, float heatIndexTemp);
@@ -82,16 +84,17 @@ void setup() {
 
 void loop() {
 
-  if(errorCount > 11) {
+  if(errorCount > 9) {
     initializeSdCardLoop();
   }
 
-  char dhtLogFileName[15];
+  char dhtLogFileName[sizeof(logNamePrefix)+13];
   formatTimeForFileName(dhtLogFileName);
 
   float rhum = dht.readHumidity();
   float temp = dht.readTemperature();
   float hic = dht.computeHeatIndex(temp, rhum, false);
+  SERIAL_PRINTER.printf("DHT readings = %.2f ºC, %.0f RH, %.2f ºC\n", temp, rhum, hic);
 
   if(logDhtReadings(dhtLogFileName, temp, rhum, hic) != 0) {
     errorCount++;
@@ -172,7 +175,7 @@ void formatTimeForCsv(char* timeChar) {
 }
 
 /**
- * @brief This return timeChar in this format: dhtLog_2022-01-20
+ * @brief This return timeChar in this format: logNamePrefix2022-01-20
  *        This will make logs rotate every next day
  */
 void formatTimeForFileName(char* timeChar) {
@@ -180,7 +183,7 @@ void formatTimeForFileName(char* timeChar) {
   currentTime = buildTimeWithOffsets + (millis()/1000);
   tm* aux = gmtime(&currentTime);
   sprintf(timeChar,"%s%d-%s%d-%s%d",
-    logFileNameStarter,
+    logNamePrefix,
     aux->tm_year+1900, // Year
     aux->tm_mon+1 < 10 ? "0" : "", aux->tm_mon+1, // month with
     aux->tm_mday < 10 ? "0" : "", aux->tm_mday // day
@@ -189,7 +192,7 @@ void formatTimeForFileName(char* timeChar) {
   // Uncomment this if you want logs to rotate by hour
   /*
   sprintf(timeChar,"%s%d-%s%d-%s%d_%s%d",
-    logFileNameStarter,
+    logNamePrefix,
     aux->tm_year+1900, // Year
     aux->tm_mon+1 < 10 ? "0" : "", aux->tm_mon+1, // month with
     aux->tm_mday < 10 ? "0" : "", aux->tm_mday, // day
